@@ -12,7 +12,7 @@ void app_main(void)
     gpio_reset_pin(LED_GPIO);
     gpio_set_direction(LED_GPIO, GPIO_MODE_OUTPUT);
 
-    while (1)
+    for (;;)
     {
         gpio_set_level(LED_GPIO, led_level);
         led_level = (0U == led_level) ? 1U : 0U;
