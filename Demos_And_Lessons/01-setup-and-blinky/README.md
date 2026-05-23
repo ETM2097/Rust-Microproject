@@ -209,24 +209,27 @@ Equivalent to linking a C library that only provides startup symbols.
 ```rust
 use esp_hal::{
     delay::Delay,
-    gpio::{Level, Output},
-    prelude::*,
+    gpio::{Level, Output, OutputConfig},
 };
 ```
 
-This is the HAL. `Output` is the GPIO-as-output type, `Level` is an enum
-(`High` / `Low`), `Delay` is a blocking delay helper backed by the system
-timer. The `prelude::*` brings in commonly used traits (including the
-`#[entry]` macro).
+This is the HAL. `Output` is the GPIO-as-output type, `Level` is an
+enum (`High` / `Low`), `OutputConfig` carries the per-pin electrical
+configuration (drive strength, pull resistors, open-drain vs push-pull),
+and `Delay` is a blocking delay helper backed by the system timer.
+
+The `delay` and `timer` modules live behind the `unstable` cargo
+feature, which is why `Cargo.toml` enables
+`features = ["esp32s3", "unstable"]`.
 
 ```rust
-#[entry]
+#[esp_hal::main]
 fn main() -> ! {
 ```
 
-`#[entry]` is a procedural macro from the HAL's startup crate. It tells
-the linker: *this is the function to call after the reset vector and
-after the runtime sets up the stack and `.bss`/`.data`*. Roughly the
+`#[esp_hal::main]` is a procedural macro from the HAL. It tells the
+linker: *this is the function to call after the reset vector and after
+the runtime sets up the stack and `.bss`/`.data`*. Roughly the
 equivalent of ESP-IDF wiring `app_main` for you.
 
 The return type `!` is the **"never type"**. It is the type of an
@@ -254,7 +257,11 @@ two modules from both calling `gpio_set_direction(GPIO_NUM_2, ...)` with
 conflicting configurations.
 
 ```rust
-let mut led = Output::new(peripherals.GPIO2, Level::Low);
+let mut led = Output::new(
+    peripherals.GPIO2,
+    Level::Low,
+    OutputConfig::default(),
+);
 ```
 
 `Output::new` *consumes* `peripherals.GPIO2` (note: no `&`, no `*` —
@@ -263,6 +270,16 @@ specific pin. The returned value's type only exposes output operations
 (`set_high`, `set_low`, `toggle`). There is no `.read()` method on it,
 because reading isn't valid for a pin configured as a push-pull output —
 *and that is enforced by the type system, not by a runtime check*.
+
+The three arguments are:
+
+1. **The pin** itself (moved in — nothing else can touch GPIO2 after this).
+2. **The initial level** the pin should be driven to *before* the first
+   user code runs (here `Low` — the LED starts off).
+3. **`OutputConfig`** — the electrical config: drive strength, pull
+   resistors, open-drain vs push-pull. `default()` gives push-pull, no
+   pull, default drive. Change it here if you need open-drain (for an
+   I²C-style line) or a stronger drive.
 
 If later you needed a pin you can both read and drive, you would build
 a `Flex` (input/output) instead, and you'd get a different type with
@@ -330,29 +347,38 @@ void app_main(void)
 // `esp_backtrace` registers the panic handler and the SoC exception handler.
 use esp_backtrace as _;
 
-// esp-hal is the Hardware Abstraction Layer for ESP32
+// esp-hal is the Hardware Abstraction Layer for ESP32.
+// The `delay` module lives behind the `unstable` feature, enabled in Cargo.toml.
 use esp_hal::{
     delay::Delay,
-    gpio::{Level, Output},
-    prelude::*,
+    gpio::{Level, Output, OutputConfig},
 };
 
-// #[entry] is the bare-metal equivalent of app_main in ESP-IDF.
-// The return type `!` (the "never type") is a compile-time promise
-// that the function never returns. An accidental `return;` would be a compile error.
-#[entry]
+// `#[esp_hal::main]` places this function at the reset vector and
+// forbids it from returning. The return type `!` (the "never type")
+// is a compile-time promise that the function never returns —
+// an accidental `return;` would be a compile error.
+#[esp_hal::main]
 fn main() -> ! {
     // esp_hal::init returns a struct that owns every peripheral on the
     // chip exactly once. peripherals.GPIO2 is a value of a type unique
     // to that pin (`GpioPin<2>`), not an integer like `GPIO_NUM_2` in C.
     let peripherals = esp_hal::init(esp_hal::Config::default());
 
-    // Output::new(pin, level) *consumes* the pin and gives back an
-    // Output<static>. The returned type only exposes output operations
-    // (set_high, set_low, toggle) — you cannot call read() on it
-    // because that method doesn't exist for this type, it exists
+    // Output::new(pin, initial_level, config) *consumes* the pin and
+    // returns an Output driver. The returned type only exposes output
+    // operations (set_high, set_low, toggle) — you cannot call read()
+    // on it because that method doesn't exist for this type; it lives
     // on Flex (input/output) or Input.
-    let mut led = Output::new(peripherals.GPIO2, Level::Low);
+    //
+    // OutputConfig::default() = push-pull, no pull resistors, default
+    // drive strength. Tune it here if you need open-drain, a pull-up,
+    // a higher drive strength, etc.
+    let mut led = Output::new(
+        peripherals.GPIO2,
+        Level::Low,
+        OutputConfig::default(),
+    );
     let delay = Delay::new();
 
     loop {
@@ -425,12 +451,15 @@ cargo run --release
 
 ## 8. Where to go next
 
-- Read the [`esp-hal` book](https://docs.espressif.com/projects/rust/esp-hal/latest/)
-  for a tour of the other peripherals.
-- Try changing `Output::new(..., Level::Low)` to `Level::High` and watch
-  the LED start in the opposite state.
-- Replace the blocking `Delay` with `embassy` async timers — that is the
-  next lesson once you are comfortable with bare-metal.
+- Browse the official **esp-rs** project on GitHub (`github.com/esp-rs`):
+  the `esp-hal`, `esp-backtrace`, `esp-println` and `esp-hal-embassy`
+  repos all carry their own `README.md` and `examples/` folders.
+- Run `cargo doc --open` inside the `rust/` folder to read the offline
+  API docs for every dependency you pulled in.
+- Try changing `Output::new(..., Level::Low, ...)` to `Level::High` and
+  watch the LED start in the opposite state.
+- Replace the blocking `Delay` with `embassy` async timers — that is
+  the next lesson once you are comfortable with bare-metal.
 
 If anything in this guide felt hand-wavy, the answer is almost always in
 the Rust source file itself: every line in `src/main.rs` has a reason.
