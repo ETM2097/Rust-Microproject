@@ -1,0 +1,12 @@
+[package]
+name = "tars-rust-pod-shared"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "shared"
+
+[dependencies]
+crc = "3"
+cobs = { version = "0.5.1", default-features = false }

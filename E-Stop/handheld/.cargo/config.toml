@@ -1,0 +1,17 @@
+[build]
+target = "xtensa-esp32s3-espidf"
+
+[target.xtensa-esp32s3-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+rustflags = ["--cfg", "espidf_time64"]
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[env]
+MCU = "esp32s3"
+# Match the IDF version installed by espup on this host
+# (/home/enric_talens/.espressif/v5.5.2/esp-idf). IDF_PATH in the user's
+# environment is the source of truth; this is a fallback for clean shells.
+ESP_IDF_VERSION = "release/v5.5"

@@ -1,0 +1,23 @@
+[package]
+name = "tars-rust-pod-handheld"
+version.workspace = true
+edition = "2021"
+license.workspace = true
+build = "build.rs"
+resolver = "2"
+
+[[bin]]
+name = "handheld"
+path = "src/main.rs"
+
+[dependencies]
+shared = { path = "../shared", package = "tars-rust-pod-shared" }
+esp-idf-svc = { version = "0.52", features = ["std", "binstart"] }
+log = "0.4"
+anyhow = "1"
+
+[build-dependencies]
+embuild = "0.33"
+
+[package.metadata.esp-idf-sys]
+esp_idf_version = "release/v5.5"

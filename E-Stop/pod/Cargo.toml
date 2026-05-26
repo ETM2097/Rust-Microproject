@@ -1,0 +1,30 @@
+[package]
+name = "tars-rust-pod-pod"
+version.workspace = true
+edition = "2024"
+license.workspace = true
+
+[[bin]]
+name = "pod"
+path = "src/main.rs"
+
+[dependencies]
+shared = { path = "../shared", package = "tars-rust-pod-shared" }
+
+esp-hal = { version = "1.1", features = ["esp32s3", "unstable"] }
+esp-rtos = { version = "0.3", features = ["esp32s3", "embassy", "esp-radio"] }
+esp-radio = { version = "0.18", features = ["esp32s3", "esp-now", "wifi", "unstable"] }
+esp-alloc = "0.10"
+esp-backtrace = { version = "0.19", features = ["esp32s3", "panic-handler", "println"] }
+esp-println = { version = "0.17", features = ["esp32s3"] }
+esp-bootloader-esp-idf = { version = "0.5", features = ["esp32s3"] }
+
+embassy-executor = "0.10"
+embassy-sync = "0.8"
+embassy-time = "0.5"
+embassy-futures = "0.1"
+
+static_cell = "2.1"
+heapless = "0.9.3"
+embedded-io = "0.7"
+embedded-io-async = "0.7"

@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = ["shared", "pod", "handheld"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["Enric <enricxz@gmail.com>"]
+
+# Release profile is tuned for the embedded targets (pod, handheld). shared/
+# host tests use dev/test profile and are unaffected.
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = true
+overflow-checks = false
