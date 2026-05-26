@@ -1,0 +1,35 @@
+[package]
+name = "prueba2"
+version = "0.1.0"
+authors = ["jusue"]
+edition = "2021"
+resolver = "2"
+rust-version = "1.82"
+
+[[bin]]
+name = "prueba2"
+harness = false # do not use the built-in cargo test harness -> resolve rust-analyzer errors
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true    # Symbols are nice, and they don't increase the size on Flash
+opt-level = "z"
+[patch.crates-io]
+esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys.git" }
+esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal.git" }
+esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc.git" }
+
+[dependencies]
+log = "0.4"
+esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync","alloc"] }
+esp-idf-hal = "0.46.2" # Añade esta
+esp-idf-sys = { version = "0.37.2", features = ["binstart"] } # Añade esta si no aparece arriba
+anyhow = "1.0"         # Muy útil para manejar errores de conexión
+embedded-svc = "0.29"  # Necesaria para las interfaces de MQTT y WiFi
+embassy-time = { version = "0.5.1", features = ["generic-queue-8"] }
+serde_json = "1.0"      # Para serializar los datos a JSON antes de enviarlos por MQTT
+
+[build-dependencies]
+embuild = "0.33"
