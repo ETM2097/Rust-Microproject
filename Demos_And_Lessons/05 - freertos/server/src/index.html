@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ESP32 — Live Data</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 { color: #38bdf8; }
+    .panel {
+      background: #1e293b;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .latest {
+      font-size: 4rem;
+      font-weight: bold;
+      color: #4ade80;
+      text-align: center;
+    }
+    .ts { color: #94a3b8; text-align: center; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #334155; }
+    th { color: #38bdf8; }
+    .empty { color: #94a3b8; text-align: center; padding: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>ESP32 — Live Data</h1>
+
+  <div class="panel">
+    <div class="ts">Latest value received</div>
+    <div class="latest" id="latest">&mdash;</div>
+    <div class="ts" id="latest-ts">waiting for data...</div>
+  </div>
+
+  <div class="panel">
+    <h2>History</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Time</th><th>Value</th></tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="3" class="empty">No data yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    async function refresh() {
+      try {
+        const r = await fetch('/api/history');
+        const data = await r.json();
+
+        if (data.length === 0) return;
+
+        const latest = data[data.length - 1];
+        document.getElementById('latest').textContent = latest.value;
+        document.getElementById('latest-ts').textContent = 'at ' + latest.ts;
+
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+        // Show most recent on top
+        data.slice().reverse().forEach((d, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${data.length - i}</td><td>${d.ts}</td><td>${d.value}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error('refresh failed:', e);
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 1000);
+  </script>
+</body>
+</html>

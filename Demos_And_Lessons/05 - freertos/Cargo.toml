@@ -5,8 +5,11 @@ edition = "2024"
 resolver = "2"
 
 [dependencies]
-esp-idf-svc = { version = "0.48", features = ["std", "embassy-time-driver"] }
-esp-idf-hal = "0.43"
+esp-idf-svc = { version = "0.51", features = ["std"] }
+esp-idf-hal = "0.45"
+embedded-svc = "0.28"
+anyhow = "1"
+log = "0.4"
 
 [build-dependencies]
-embuild = "0.31"
+embuild = "0.33"
